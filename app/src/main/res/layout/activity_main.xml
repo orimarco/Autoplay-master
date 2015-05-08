@@ -1,0 +1,68 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity"
+    android:id="@+id/hello">
+
+
+    <MediaController
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:id="@+id/mediaController" />
+
+    <ImageButton
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:adjustViewBounds="true"
+        android:maxWidth="200dp"
+        android:maxHeight="200dp"
+        android:scaleType="fitCenter"
+        android:src = "@drawable/mic"
+        android:onClick="recognize"
+        android:id="@+id/micBtn"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="@string/playPause"
+        android:onClick="playPause"
+        android:id="@+id/playBtn"
+        android:layout_below="@+id/micBtn"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="@string/Begin"
+        android:onClick="onclick"
+        android:id="@+id/BeginBtn"
+        android:layout_below="@+id/playBtn"
+        android:layout_alignStart="@+id/playBtn" />
+
+    <Button
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="@string/skip"
+        android:onClick="forward"
+        android:id="@+id/skipBtn"
+        android:layout_below="@+id/BeginBtn"
+        android:layout_alignStart="@+id/playBtn" />
+    <Button
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="@string/back"
+        android:onClick="back"
+        android:id="@+id/backBtn"
+        android:layout_below="@+id/skipBtn"
+        android:layout_alignStart="@+id/playBtn" />
+
+
+
+
+    <!--<uses-permission android:name="android.permission.WAKE_LOCK" />-->
+</RelativeLayout>
