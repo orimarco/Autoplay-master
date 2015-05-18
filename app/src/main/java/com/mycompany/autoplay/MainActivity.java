@@ -44,27 +44,32 @@ public class MainActivity extends ActionBarActivity {
     private List<String> pauseMatches;
     String[] songs;
     String[] splited;
+    boolean wasPlaying;
+    int numSongs;
 
 
-    void callforward(){
+
+    void callForward(){
         MediaPlayer.OnCompletionListener completionListener= new MediaPlayer.OnCompletionListener(){
             @Override
             public void onCompletion(MediaPlayer arg0) {
-                callforward();
+                callForward();
             }
         };
         if (mediaPlayer != null)
             mediaPlayer.release();
 
-        splited = songs[index++].split("\\s+");
+        splited = songs[index].split("\\s+");
+        index=(index+1)%numSongs;
         String str = spaces(splited);
         mediaPlayer = MediaPlayer.create(this, Uri.parse("http://storage.googleapis.com/autoplay_audio/" + str));
         mediaPlayer.setOnCompletionListener(completionListener);
-        mediaPlayer.start();
+        if(! mediaPlayer.isPlaying())
+            mediaPlayer.start();
     }
     public void forward(View v) {
 
-       callforward();
+        callForward();
 
     }
     @Override
@@ -72,23 +77,11 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         index = 0;
+        wasPlaying = false;
 
-
-//        mediaPlayer = MediaPlayer.create(this, songsIds.get(index));
-//        File f = Environment.getExternalStorageDirectory();
-//        ArrayList<String> names = new ArrayList<String>(Arrays.asList(f.list()));
-//        Toast.makeText(this, names.toString(), Toast.LENGTH_LONG).show();
-//        mediaPlayer = MediaPlayer.create(this,Uri.parse("http://dimechimes.com/media/Rocky_Soundtrack_-_Eye_Of_The_Tiger.mp3"));
-//        mediaPlayer = MediaPlayer.create(this,Uri.parse("https://00e9e64bac29d4aaf6ceea8798876fe4889f1f7c783eea7404-apidata.googleusercontent.com/download/storage/v1_internal/b/autoplay_audio/o/02-Move%20It.mp3?qk=AD5uMEscWeeOP-iRR4tfcTkrBltzjjHmcTCHrDGpYQyymTZd6QKFMzAiZ38S44yoPLVvGE-Oq_RouDT1EguQbIv_fABtrUZVTReNwq96a-6vS1feRV_9Rxim9eYkGv-DR4Z3QTf9clalRM0fYB5M61YZ2HWGgS-KFS1CNq4lNq5-fhDch7iKTK2jeTEbzfSSZfLNtffXP29z2oUDHum5jX5RQx9oQns4zH_ss6RRh8ZEakTS0ethvpFFVr9JsnfuxiY6Hnt83T_4SJW6N7wO9D2fsPCh6VRVPBv3hF8j1h2cTipMzsKIVBeVdH5Psxo9Twlm8JiAw3-RpjlOwq66FeeArM2DL5w1GKeA1S51ecTQ69Tlfnsrd2Boril6QZHDbdHFuoKRFSDbbWNfiBEmGZe0mtRuG21fkpTgHgpQaUZvwLWrZNGe7T6Xw_PmgV_l6YcP4PFNyQR96X8WFYukuWRvqTtMbAWTOk9CPg_fnpHz0ZByXDppKYRJSV75_2ft85qwWD1sT-ZPbgz9D0ysIlzRaaOg-EIiPq9KmLVZMnGzIMK9CaNLBaSdU7XjGqj9DxKlq4VJWj6NtLplfkqzdNtQ44P-cVupqR-lC8cuHV30FYRoK3vvzyd7H3we1T16_CTK1YEQ5-FiddQ3giMNodYvaYZFlm4UVV3-8xYzDmSl-uj2hq8Irlesja6KE7BvFU7xcSOZGe_e8fLzf3dUVrD5M6ZJYzj-pQ"));
-//        mediaPlayer = MediaPlayer.create(this,Uri.parse("http://storage.googleapis.com/autoplay_audio/12-Why.mp3"));
-//        mediaPlayer = MediaPlayer.create(this, Uri.parse(Environment.getExternalStorageDirectory().getPath() + "/Music/Flares.mp3"));
-//        srh = new SpeechRecognitionHelper();
-//        readPools();
-//        View v = this.getWindow().getDecorView().findViewById(android.R.id.content);
-
-//        mediaPlayer.start();
-//        play(v);
-//        pause(v);
+        srh = new SpeechRecognitionHelper();    //initialize speech recognizer
+        readPools();    //initialize word matching pools
+        new ServletPostAsyncTask().execute(new Pair<Context, String>(this, "1 2 3 4 5"));
     }
 
 
@@ -121,7 +114,7 @@ public class MainActivity extends ActionBarActivity {
         length = splited.length;
         while (length > 1) {
             length--;
-            str = str + splited[i] + " ";
+            str = str + splited[i] + "%20";
             i++;
         }
         str = str + splited[i];
@@ -129,49 +122,52 @@ public class MainActivity extends ActionBarActivity {
     }
 
     public void recognize(View v) {
+        if(mediaPlayer.isPlaying())
+            wasPlaying = true;
         mediaPlayer.pause();
         srh.run(this);
     }
 
     public void playPause(View v) {
-            if(mediaPlayer.isPlaying()){
-                mediaPlayer.pause();
-            } else {
-                mediaPlayer.start();
-            }
+        if(mediaPlayer.isPlaying() || wasPlaying){
+            mediaPlayer.pause();
+        } else {
+            mediaPlayer.start();
+        }
     }
 
+    public void recognizedPlay(View v){
+        if(wasPlaying)
+            Toast.makeText(this, "Music is already playing!", Toast.LENGTH_LONG).show();
+        mediaPlayer.start(); //start again anyway, because we paused before recognition
+    }
 
+    public void recognizedPause(View v){    //no need to pause, already paused...
+        if(!wasPlaying)
+            Toast.makeText(this, "Music is already paused!", Toast.LENGTH_LONG).show();
+        wasPlaying = false;
+    }
 
     public void back(View v) {
         MediaPlayer.OnCompletionListener completionListener= new MediaPlayer.OnCompletionListener(){
             @Override
             public void onCompletion(MediaPlayer arg0) {
-                callforward();
+                callForward();
             }
         };
         if (mediaPlayer != null)
             mediaPlayer.release();
-        index-=2;
-        splited = songs[index++].split("\\s+");
+        index=(index-2);
+        if(index<0)
+            index=index+numSongs;
+        splited = songs[index].split("\\s+");
+        index=(index+1)%numSongs;
         String str = spaces(splited);
         mediaPlayer = MediaPlayer.create(this, Uri.parse("http://storage.googleapis.com/autoplay_audio/" + str));
         mediaPlayer.setOnCompletionListener(completionListener);
-        mediaPlayer.start();
+        if(!mediaPlayer.isPlaying())
+            mediaPlayer.start();
     }
-
-//    private List<Integer> getSongsIdsList(){
-//        Field[] fields=R.raw.class.getFields();
-//        List<Integer> ids= new ArrayList<>();
-//        for (Field field : fields) {
-//            try {
-//                ids.add(field.getInt(field));
-//            } catch (IllegalAccessException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//        return ids;
-//    }
 
     // Activity Results handler
     @Override
@@ -191,25 +187,30 @@ public class MainActivity extends ActionBarActivity {
                 Toast.makeText(this, (String) matches.get(0), Toast.LENGTH_LONG).show();
         }
 
-        //analyze(matches);
+        analyze(matches);
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-  /*  void analyze(ArrayList input) {
+    void analyze(ArrayList input) {
         View v = this.getWindow().getDecorView().findViewById(android.R.id.content);
         if (matchesPlay(input))
-            play(v);
+            recognizedPlay(v);
         else if (matchesPause(input))
-            pause(v);
+            recognizedPause(v);
         else if (matchesForward(input))
             forward(v);
         else if (matchesBack(input))
             back(v);
-    }*/
+
+        if(wasPlaying)
+            mediaPlayer.start();
+        wasPlaying = false; //initialize back
+
+    }
 
     private boolean matchesPlay(ArrayList inputArray) {
         for (Object word : inputArray) {
-            if (playMatches.contains(word))
+            if (playMatches.contains(((String)word).toLowerCase()))
                 return true;
         }
         return false;
@@ -217,7 +218,7 @@ public class MainActivity extends ActionBarActivity {
 
     private boolean matchesPause(ArrayList inputArray) {
         for (Object word : inputArray) {
-            if (pauseMatches.contains(word))
+            if (pauseMatches.contains(((String)word).toLowerCase()))
                 return true;
         }
         return false;
@@ -225,7 +226,7 @@ public class MainActivity extends ActionBarActivity {
 
     private boolean matchesForward(ArrayList inputArray) {
         for (Object word : inputArray) {
-            if (forwardMatches.contains(word))
+            if (forwardMatches.contains(((String)word).toLowerCase()))
                 return true;
         }
         return false;
@@ -233,7 +234,7 @@ public class MainActivity extends ActionBarActivity {
 
     private boolean matchesBack(ArrayList inputArray) {
         for (Object word : inputArray) {
-            if (backMatches.contains(word))
+            if (backMatches.contains(((String)word).toLowerCase()))
                 return true;
         }
         return false;
@@ -273,10 +274,6 @@ public class MainActivity extends ActionBarActivity {
         return words;
     }
 
-    public void onclick(View v) {
-        new ServletPostAsyncTask().execute(new Pair<Context, String>(this, "1 2 3 4 5"));
-    }
-
     class ServletPostAsyncTask extends AsyncTask<Pair<Context, String>, Void, String> {
         private Context context;
 
@@ -312,20 +309,36 @@ public class MainActivity extends ActionBarActivity {
         @Override
         protected void onPostExecute(String result) {
 
-    MediaPlayer.OnCompletionListener completionListener= new MediaPlayer.OnCompletionListener(){
-        @Override
-        public void onCompletion(MediaPlayer arg0) {
-        callforward();
-        }
-    };
+            MediaPlayer.OnCompletionListener completionListener = new MediaPlayer.OnCompletionListener(){
+                @Override
+                public void onCompletion(MediaPlayer arg0) {
+                    callForward();
+                }
+            };
+
 
             if (mediaPlayer == null) {
                 songs = result.split("@");
-                splited = songs[index++].split("\\s+");
+                numSongs=songs.length;
+                splited = songs[index].split("\\s+");
+                index=(index+1)%numSongs;
                 String str = spaces(splited);
-                mediaPlayer = MediaPlayer.create(context, Uri.parse("http://storage.googleapis.com/autoplay_audio/" + str));
-                mediaPlayer.setOnCompletionListener(completionListener);
-                mediaPlayer.start();
+//                URL uri = null;
+//                try {
+//                     uri = new URL("http://storage.googleapis.com/autoplay_audio/02-Move%20It");
+//                } catch (MalformedURLException e) {
+//                    e.printStackTrace();
+//                }
+                Uri uri = Uri.parse("http://storage.googleapis.com/autoplay_audio/" + str);
+//                try {
+                mediaPlayer = MediaPlayer.create(context, uri);
+//                } catch (URISyntaxException e) {
+//                    e.printStackTrace();
+//                }
+                if(mediaPlayer != null) {
+                    mediaPlayer.setOnCompletionListener(completionListener);
+                    mediaPlayer.pause();
+                }
             }
 
         }

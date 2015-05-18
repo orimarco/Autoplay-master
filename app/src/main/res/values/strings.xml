@@ -4,7 +4,6 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="playPause">play/pause</string>
-    <string name="Begin">begin</string>
     <string name="skip">skip</string>
     <string name="back">back</string>
 
