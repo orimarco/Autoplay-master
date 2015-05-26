@@ -1,5 +1,6 @@
 package com.mycompany.autoplay;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.media.MediaPlayer;
@@ -12,6 +13,8 @@ import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import org.apache.http.HttpResponse;
@@ -30,13 +33,9 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-
-
-
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends Activity {
     MediaPlayer mediaPlayer;
     SpeechRecognitionHelper srh;
-    List<Integer> songsIds;
     int index;
     private List<String> playMatches;
     private List<String> backMatches;
@@ -46,8 +45,9 @@ public class MainActivity extends ActionBarActivity {
     String[] splited;
     boolean wasPlaying;
     int numSongs;
+    int playlistLength=0;
 
-
+    static boolean isFirstTime = true;
 
     void callForward(){
         MediaPlayer.OnCompletionListener completionListener= new MediaPlayer.OnCompletionListener(){
@@ -75,13 +75,21 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Bundle b = getIntent().getExtras();
+        playlistLength = b.getInt("seekBarProgressInSeconds");
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
-        index = 0;
-        wasPlaying = false;
+        if(isFirstTime) {
+            index = 0;
+            wasPlaying = false;
+            srh = new SpeechRecognitionHelper();    //initialize speech recognizer
+            readPools();    //initialize word matching pools
 
-        srh = new SpeechRecognitionHelper();    //initialize speech recognizer
-        readPools();    //initialize word matching pools
-        new ServletPostAsyncTask().execute(new Pair<Context, String>(this, "1 2 3 4 5"));
+            new ServletPostAsyncTask().execute(new Pair<Context, String>(this, "1 2 3 4 5"));
+            isFirstTime = false;
+        }
     }
 
 
@@ -287,7 +295,7 @@ public class MainActivity extends ActionBarActivity {
             try {
                 // Add name data to request
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
-                nameValuePairs.add(new BasicNameValuePair("name", name));
+                nameValuePairs.add(new BasicNameValuePair("playlistLength", Integer.toString(playlistLength)));
                 httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
                 // Execute HTTP Post Request
@@ -308,33 +316,21 @@ public class MainActivity extends ActionBarActivity {
 
         @Override
         protected void onPostExecute(String result) {
-
             MediaPlayer.OnCompletionListener completionListener = new MediaPlayer.OnCompletionListener(){
                 @Override
                 public void onCompletion(MediaPlayer arg0) {
                     callForward();
                 }
             };
-
-
             if (mediaPlayer == null) {
                 songs = result.split("@");
-                numSongs=songs.length;
+                numSongs=songs.length - 1;
                 splited = songs[index].split("\\s+");
                 index=(index+1)%numSongs;
                 String str = spaces(splited);
-//                URL uri = null;
-//                try {
-//                     uri = new URL("http://storage.googleapis.com/autoplay_audio/02-Move%20It");
-//                } catch (MalformedURLException e) {
-//                    e.printStackTrace();
-//                }
                 Uri uri = Uri.parse("http://storage.googleapis.com/autoplay_audio/" + str);
-//                try {
                 mediaPlayer = MediaPlayer.create(context, uri);
-//                } catch (URISyntaxException e) {
-//                    e.printStackTrace();
-//                }
+
                 if(mediaPlayer != null) {
                     mediaPlayer.setOnCompletionListener(completionListener);
                     mediaPlayer.pause();

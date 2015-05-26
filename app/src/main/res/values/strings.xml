@@ -6,6 +6,8 @@
     <string name="playPause">play/pause</string>
     <string name="skip">skip</string>
     <string name="back">back</string>
+    <string name="title_activity_entrance">entranceActivity</string>
+    <string name="chooseLength">Welcome! please choose length of playlist...</string>
 
 
 </resources>

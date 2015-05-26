@@ -5,76 +5,8 @@
 */
 
 package com.autoplay.backend;
-//import com.parse.GetCallback;
-//import com.parse.ParseFile;
-//import com.parse.ParseObject;
-//import com.parse.ParseQuery;
-//
-//import java.io.IOException;
-//import java.text.ParseException;
-//
-//import javax.servlet.http.*;
-//
-//
-//public class MyServlet extends HttpServlet {
-//    private String url;
-//
-//    @Override
-//    public void doGet(HttpServletRequest req, HttpServletResponse resp)
-//            throws IOException {
-//        resp.setContentType("text/plain");
-//        resp.getWriter().println("Please use the form to POST to this url");
-//    }
-//
-//    @Override
-//    public void doPost(HttpServletRequest req, HttpServletResponse resp)
-//            throws IOException {
-//
-//        String name = req.getParameter("name");
-//        resp.setContentType("text/plain");
-//        if (name == null) {
-//            resp.getWriter().println("Please enter a name");
-//        }
-//
-//        ParseQuery<ParseObject> query = ParseQuery.getQuery("Autoplay");
-//        query.getInBackground("9pKeuDnP9y", new GetCallback<ParseObject>() {
-//            public void done(ParseObject object, ParseException e) {
-//                if (e == null) {
-//                    ParseFile audioFile = object.getParseFile("AudioFile");
-//                    url = audioFile.getUrl();
-//                    try {
-////                        MediaPlayer mp = new MediaPlayer();
-////                        mp.setDataSource(audioFileURL);
-////                        mp.prepare();
-////                        mp.start();
-//                        //       mediaPlayer = MediaPlayer.create(this, Uri.parse(audioFileURL));
-//                        //      mediaPlayer = new MediaPlayer();
-//                        //      mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-//
-//                        //          mediaPlayer.setDataSource(audioFileURL);
-//                        //          mediaPlayer.prepare();
-//                        //          mediaPlayer.start();
-//                    } catch (Exception e1) {
-//                        // TODO Auto-generated catch block
-//                        e1.printStackTrace();
-//                    }
-//                } else {
-//                    // something went wrong
-//                }
-//            }
-//
-//            @Override
-//            public void done(ParseObject parseObject, com.parse.ParseException e) {
-//            }
-//        });
-//
-//        resp.getWriter().println(url);
-//    }
-//
-//}
 
-
-        import com.google.appengine.tools.cloudstorage.GcsService;
+import com.google.appengine.tools.cloudstorage.GcsService;
 import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
 import com.google.appengine.tools.cloudstorage.ListItem;
 import com.google.appengine.tools.cloudstorage.ListOptions;
@@ -84,6 +16,11 @@ import com.google.appengine.tools.cloudstorage.RetryParams;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Scanner;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -117,16 +54,6 @@ public class MyServlet extends HttpServlet {
      */
     @Override
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-////        GcsFilename fileName = getFileName(req);
-//        if (SERVE_USING_BLOBSTORE_API) {
-//            BlobstoreService blobstoreService = BlobstoreServiceFactory.getBlobstoreService();
-//            BlobKey blobKey = blobstoreService.createGsBlobKey(
-//                    "/gs/" + fileName.getBucketName() + "/" + fileName.getObjectName());
-//            blobstoreService.serve(blobKey, resp);
-//        } else {
-//            GcsInputChannel readChannel = gcsService.openPrefetchingReadChannel(fileName, 0, BUFFER_SIZE);
-//            copy(Channels.newInputStream(readChannel), resp.getOutputStream());
-//        }
     }
 
     /**
@@ -136,31 +63,35 @@ public class MyServlet extends HttpServlet {
      */
     @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        int found=0;
+        String playlistLengthS=req.getParameter("playlistLength");
+        int playlistLength=Integer.parseInt(playlistLengthS);
         ListResult lr = gcsService.list("autoplay_audio", ListOptions.DEFAULT);
-        String str = "";
-        int i = 0;
+        List<String>lst=new ArrayList<>();
         while(lr.hasNext()){
             ListItem li = lr.next();
-                str += li.getName()+"@";
-                i++;
+            lst.add(li.getName());
+        }
+        Collections.shuffle(lst);
+        String str = "";
+        int index=0;
+        while(index<lst.size()&&playlistLength>0){
+            str += lst.get(index)+"@";
+            URL url = new URL("http://storage.googleapis.com/autoplaycheck/info.txt");
+            Scanner s = new Scanner(url.openStream());
+            while(s.hasNextLine()){
+                String string=s.nextLine();
+                String[]check =string.split("@");
+                String string2=check[0].split(":")[1];
+                if(string2.compareTo(lst.get(index))==0){                     // if strings equal
+                    playlistLength-=Integer.parseInt(check[2].split(":")[1]);
+                }
             }
-       str+="Yigdal.mp3";
-//        GcsFileMetadata metaData = gcsService.getMetadata(getFileName(req));
-//        GcsOutputChannel outputChannel =
-//                gcsService.createOrReplace(getFileName(req), GcsFileOptions.getDefaultInstance());
-//        copy(req.getInputStream(), Channels.newOutputStream(outputChannel));
+            index++;
+        }
+
         resp.getWriter().println(str);
     }
-
-//    private GcsFilename getFileName(HttpServletRequest req) {
-////        String[] splits = req.getRequestURI().split("/", 4);
-////        if (!splits[0].equals("") || !splits[1].equals("gcs")) {
-////            throw new IllegalArgumentException("The URL is not formed as expected. " +
-////                    "Expecting /gcs/<bucket>/<object>");
-////        }
-//        return new GcsFilename("autoplay_audio", "Paradise.mp3");
-////        return new GcsFilename(splits[2], splits[3]);
-//    }
 
     /**
      * Transfer the data from the inputStream to the outputStream. Then close both streams.
