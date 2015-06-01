@@ -20,21 +20,83 @@
         android:layout_centerVertical="true"
         android:id="@+id/mediaController" />
 
-    <!--<ImageButton-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:adjustViewBounds="true"-->
-        <!--android:maxWidth="200dp"-->
-        <!--android:maxHeight="200dp"-->
-        <!--android:scaleType="fitCenter"-->
-        <!--android:src = "@drawable/mic"-->
-        <!--android:onClick="recognize"-->
-        <!--android:id="@+id/micBtn"-->
-        <!--android:layout_alignParentTop="true"-->
-        <!--android:layout_centerHorizontal="true" />-->
+    <ImageButton
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:adjustViewBounds="true"
+        android:maxWidth="200dp"
+        android:maxHeight="200dp"
+        android:scaleType="fitCenter"
+        android:src = "@drawable/btn_mic"
+        android:onClick="recognize"
+        android:id="@+id/micBtn"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:background="@null"/>
+    />
 
-
-
+    <!--android:background="@layout/rounded_corner"-->
+    <!-- Player Footer -->
+    <LinearLayout
+        android:id="@+id/player_footer_bg"
+        android:layout_width="fill_parent"
+        android:layout_height="100dp"
+        android:layout_alignParentBottom="true"
+        android:gravity="center">
+    <!-- Player Buttons -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingLeft="50dp"
+        android:paddingRight="50dp">
+        <!-- Previous Button -->
+        <!--<ImageButton-->
+            <!--android:id="@+id/btnPrevious"-->
+            <!--android:src="@drawable/btn_previous"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:background="@null"/>-->
+        <!-- Backward Button -->
+        <ImageButton
+            android:id="@+id/btnBackward"
+            android:onClick="back"
+            android:src="@drawable/btn_backward"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:background="@null"/>
+        <!-- Play Button -->
+        <ImageButton
+            android:id="@+id/btnPlay"
+            android:src="@drawable/btn_play"
+            android:onClick="playPause"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:background="@null"/>
+         <!--Forward Button -->
+        <ImageButton
+            android:id="@+id/btnForward"
+            android:src="@drawable/btn_forward"
+            android:onClick="skip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="true"
+            android:background="@null"/>
+        <!--&lt;!&ndash; Next Button &ndash;&gt;-->
+        <!--<ImageButton-->
+            <!--android:id="@+id/btnNext"-->
+            <!--android:src="@drawable/btn_next"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:background="@null"/>-->
+    </LinearLayout>
+    </LinearLayout>
     <Button
         android:layout_height="wrap_content"
         android:layout_width="wrap_content"
@@ -44,22 +106,23 @@
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true" />
 
-    <Button
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
-        android:text="@string/skip"
-        android:onClick="forward"
-        android:id="@+id/skipBtn"
-        android:layout_below="@+id/playBtn"
-        android:layout_alignStart="@+id/playBtn" />
-    <Button
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
-        android:text="@string/back"
-        android:onClick="back"
-        android:id="@+id/backBtn"
-        android:layout_below="@+id/skipBtn"
-        android:layout_alignStart="@+id/playBtn" />/>
+    <!--<ImageButton-->
+        <!--android:src="@drawable/a1"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:text="@string/skip"-->
+        <!--android:onClick="forward"-->
+        <!--android:id="@+id/skipBtn"-->
+        <!--android:layout_below="@+id/playBtn"-->
+        <!--android:layout_alignStart="@+id/playBtn" />-->
+    <!--<Button-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:text="@string/back"-->
+        <!--android:onClick="back"-->
+        <!--android:id="@+id/backBtn"-->
+        <!--&lt;!&ndash;android:layout_below="@+id/skipBtn"&ndash;&gt;-->
+        <!--android:layout_alignStart="@+id/playBtn" />/>-->
 
 
 
