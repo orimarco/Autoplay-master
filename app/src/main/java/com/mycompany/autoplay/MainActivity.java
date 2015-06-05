@@ -8,13 +8,14 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
-import android.support.v7.app.ActionBarActivity;
 import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.apache.http.HttpResponse;
@@ -66,11 +67,11 @@ public class MainActivity extends Activity {
         mediaPlayer.setOnCompletionListener(completionListener);
         if(! mediaPlayer.isPlaying())
             mediaPlayer.start();
+        TextView songName = (TextView) findViewById(R.id.songName);
+        songName.setText(str);
     }
     public void forward(View v) {
-
         callForward();
-
     }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,6 +115,39 @@ public class MainActivity extends Activity {
 
         return super.onOptionsItemSelected(item);
     }
+//
+//    @Override
+//    public void onPause()
+//    {
+//        super.onPause();
+//        if (mediaPlayer != null)
+//            if(mediaPlayer.isPlaying()){
+//                wasPlaying = true;
+//                mediaPlayer.pause();
+//            }
+//    }
+//
+//    @Override
+//    public void onResume()
+//    {
+//        super.onResume();
+//        if (mediaPlayer != null && wasPlaying){
+//            mediaPlayer.start();
+//        }
+//    }
+//
+//    @Override
+//    public void onStop()
+//    {
+////        super.onStop();
+//        if (mediaPlayer != null){
+//            if(mediaPlayer.isPlaying()){
+//                wasPlaying = true;
+//                mediaPlayer.pause();
+//            }
+//
+//        }
+//    }
 
     String spaces(String[] splited) {
         int length;
@@ -137,9 +171,12 @@ public class MainActivity extends Activity {
     }
 
     public void playPause(View v) {
+        ImageButton ib = (ImageButton)findViewById(R.id.btnPlayPause);
         if(mediaPlayer.isPlaying() || wasPlaying){
+            ib.setImageResource(R.drawable.btn_play);
             mediaPlayer.pause();
         } else {
+            ib.setImageResource(R.drawable.btn_pause);
             mediaPlayer.start();
         }
     }
@@ -147,12 +184,16 @@ public class MainActivity extends Activity {
     public void recognizedPlay(View v){
         if(wasPlaying)
             Toast.makeText(this, "Music is already playing!", Toast.LENGTH_LONG).show();
+        else
+            Toast.makeText(this, "Play", Toast.LENGTH_LONG).show();
         mediaPlayer.start(); //start again anyway, because we paused before recognition
     }
 
     public void recognizedPause(View v){    //no need to pause, already paused...
         if(!wasPlaying)
             Toast.makeText(this, "Music is already paused!", Toast.LENGTH_LONG).show();
+        else
+            Toast.makeText(this, "Pause", Toast.LENGTH_LONG).show();
         wasPlaying = false;
     }
 
@@ -190,9 +231,9 @@ public class MainActivity extends Activity {
             // more relevant results in the beginning of the list
             matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
 
-            // in “matches” array we holding a results... let’s show the most relevant
-            if (matches.size() > 0)
-                Toast.makeText(this, (String) matches.get(0), Toast.LENGTH_LONG).show();
+//            // in “matches” array we holding a results... let’s show the most relevant
+//            if (matches.size() > 0)
+//             TODO: remove, this is for tests only...   Toast.makeText(this, (String) matches.get(0), Toast.LENGTH_LONG).show();
         }
 
         analyze(matches);

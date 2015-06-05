@@ -7,7 +7,7 @@
         android:state_pressed="true" />
     <item android:drawable="@drawable/forward2"
         android:state_focused="true" />
-    <item android:drawable="@drawable/forward1"
+    <item android:drawable="@drawable/forward4"
         android:state_focused="false"
         android:state_pressed="false" />
 </selector>

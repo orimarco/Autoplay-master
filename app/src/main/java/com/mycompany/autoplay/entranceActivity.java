@@ -75,7 +75,7 @@ public class entranceActivity extends Activity {
     }
 
     private void setMinutesInText(int minutes){
-        textView.setText(minutes / 60 + "." + minutes % 60);
+        textView.setText(minutes / 60 + "h" + minutes % 60 + "m");
     }
 
     private void startMainActivity(){

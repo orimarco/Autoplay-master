@@ -1,13 +1,13 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@drawable/mic2"
+    <item android:drawable="@drawable/mic22"
         android:state_focused="true"
         android:state_pressed="true" />
-    <item android:drawable="@drawable/mic2"
+    <item android:drawable="@drawable/mic22"
         android:state_focused="false"
         android:state_pressed="true" />
-    <item android:drawable="@drawable/mic2"
+    <item android:drawable="@drawable/mic22"
         android:state_focused="true" />
-    <item android:drawable="@drawable/mic1"
+    <item android:drawable="@drawable/mic4"
         android:state_focused="false"
         android:state_pressed="false" />
 </selector>

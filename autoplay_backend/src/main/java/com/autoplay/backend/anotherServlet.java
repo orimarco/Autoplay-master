@@ -21,9 +21,11 @@ public class anotherServlet extends HttpServlet {
 
     @Override
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+
     }
 
     @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        resp.getWriter().println("omg omg omg");
     }
 }
