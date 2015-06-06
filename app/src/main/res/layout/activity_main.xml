@@ -13,6 +13,7 @@
         android:layout_height="wrap_content"
         android:layout_above="@+id/player_footer_bg"
         android:gravity="center"
+        android:layout_centerInParent="true"
         android:id="@+id/songName"
         />
 
@@ -24,6 +25,7 @@
         android:maxWidth="400dp"
         android:maxHeight="400dp"
         android:src = "@drawable/btn_mic"
+        android:scaleType="fitXY"
         android:onClick="recognize"
         android:id="@+id/micBtn"
         android:background="@null"/>
