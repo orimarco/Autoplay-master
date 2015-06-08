@@ -48,8 +48,6 @@ public class MainActivity extends Activity {
     int numSongs;
     int playlistLength=0;
 
-    static boolean isFirstTime = true;
-
     void callForward(){
         MediaPlayer.OnCompletionListener completionListener= new MediaPlayer.OnCompletionListener(){
             @Override
@@ -76,21 +74,20 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Bundle b = getIntent().getExtras();
-        playlistLength = b.getInt("seekBarProgressInSeconds");
+        if(savedInstanceState == null){
+            Bundle b = getIntent().getExtras();
+            playlistLength = b.getInt("seekBarProgressInSeconds");
+                index = 0;
+                wasPlaying = false;
+                srh = new SpeechRecognitionHelper();    //initialize speech recognizer
+                readPools();    //initialize word matching pools
+
+                new ServletPostAsyncTask().execute(new Pair<Context, String>(this, "1 2 3 4 5"));
+            }
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
-        if(isFirstTime) {
-            index = 0;
-            wasPlaying = false;
-            srh = new SpeechRecognitionHelper();    //initialize speech recognizer
-            readPools();    //initialize word matching pools
-
-            new ServletPostAsyncTask().execute(new Pair<Context, String>(this, "1 2 3 4 5"));
-            isFirstTime = false;
-        }
     }
 
 
