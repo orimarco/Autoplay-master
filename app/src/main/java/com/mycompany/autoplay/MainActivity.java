@@ -3,11 +3,14 @@ package com.mycompany.autoplay;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
 import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -42,8 +45,18 @@ public class MainActivity extends Activity {
     private List<String> backMatches;
     private List<String> forwardMatches;
     private List<String> pauseMatches;
+    private List<String> makeSomeNoiseMatches;
+    private List<String> volumeUpMatches;
+    private List<String> volumeDownMatches;
+    String CompletedSongs="";
+    String UnCompletedSongs="";
     String[] songs;
+    String[] singers;
+    String[] albums;
     String[] splited;
+    String android_id;
+    int ended=0;
+    String lastSongName="";             // name of song, if there are spaces need to be seperated by split("\\s+")
     boolean wasPlaying;
     int numSongs;
     int playlistLength=0;
@@ -57,38 +70,85 @@ public class MainActivity extends Activity {
         };
         if (mediaPlayer != null)
             mediaPlayer.release();
-
+        if(ended==1){
+            CompletedSongs+=lastSongName+"@";
+        }
+        ended=1;
         splited = songs[index].split("\\s+");
+
+        lastSongName=songs[index];
         index=(index+1)%numSongs;
         String str = spaces(splited);
         mediaPlayer = MediaPlayer.create(this, Uri.parse("http://storage.googleapis.com/autoplay_audio/" + str));
         mediaPlayer.setOnCompletionListener(completionListener);
         if(! mediaPlayer.isPlaying())
-            mediaPlayer.start();
-        TextView songName = (TextView) findViewById(R.id.songName);
-        songName.setText(str);
+            playMusic();
+        setSongDetailsText();
     }
+
+    private void setSongDetailsText() {
+        String songNameSpaces=songs[index];
+        String songSingerSpaces=singers[index];
+        String songAlbumSpaces=albums[index];
+        TextView songName = (TextView) findViewById(R.id.songName);
+        songName.setText(songNameSpaces.split(".mp3")[0]);
+        TextView artistName = (TextView) findViewById(R.id.artistName);
+        artistName.setText(songSingerSpaces);
+        TextView albumName = (TextView) findViewById(R.id.albumName);
+        albumName.setText(songAlbumSpaces);
+    }
+
     public void forward(View v) {
+        ended =0;
+        UnCompletedSongs+=lastSongName+"@";
         callForward();
     }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        android_id = android.provider.Settings.Secure.getString(this.getContentResolver(), android.provider.Settings.Secure.ANDROID_ID); //
         super.onCreate(savedInstanceState);
         if(savedInstanceState == null){
             Bundle b = getIntent().getExtras();
             playlistLength = b.getInt("seekBarProgressInSeconds");
-                index = 0;
-                wasPlaying = false;
-                srh = new SpeechRecognitionHelper();    //initialize speech recognizer
-                readPools();    //initialize word matching pools
+            index = 0;
+            wasPlaying = false;
+            srh = new SpeechRecognitionHelper();    //initialize speech recogniאzer
+            readPools();    //initialize word matching pools
 
-                new ServletPostAsyncTask().execute(new Pair<Context, String>(this, "1 2 3 4 5"));
-            }
+            new ServletPostAsyncTask().execute(new Pair<Context, String>(this, "1 2 3 4 5"));
+            PhoneStateListener phoneStateListener = new PhoneStateListener() {
+                @Override
+                public void onCallStateChanged(int state, String incomingNumber) {
+                    if (state == TelephonyManager.CALL_STATE_RINGING) {
+                        if(mediaPlayer.isPlaying())
+                            wasPlaying = true;
+                        pauseMusic();
+                    } else if(state == TelephonyManager.CALL_STATE_IDLE) {
+                        if(wasPlaying)
+                            playMusic();
+                    } else if(state == TelephonyManager.CALL_STATE_OFFHOOK) {
+                        if(mediaPlayer.isPlaying())
+                            wasPlaying = true;
+                        pauseMusic();
+                    }
+                    super.onCallStateChanged(state, incomingNumber);
+                }
+            };
+            TelephonyManager mgr = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+//            TODO: if(mgr != null) {
+//                mgr.listen(phoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
+//            }
+        }
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
     }
+    protected void onStop() {
+        super.onStop();
+        new ServletPostAsyncTask2(CompletedSongs, UnCompletedSongs, android_id).execute(new Pair<Context, String>(this, "1 2 3 4 5"));
+    }
+
 
 
     @Override
@@ -112,39 +172,6 @@ public class MainActivity extends Activity {
 
         return super.onOptionsItemSelected(item);
     }
-//
-//    @Override
-//    public void onPause()
-//    {
-//        super.onPause();
-//        if (mediaPlayer != null)
-//            if(mediaPlayer.isPlaying()){
-//                wasPlaying = true;
-//                mediaPlayer.pause();
-//            }
-//    }
-//
-//    @Override
-//    public void onResume()
-//    {
-//        super.onResume();
-//        if (mediaPlayer != null && wasPlaying){
-//            mediaPlayer.start();
-//        }
-//    }
-//
-//    @Override
-//    public void onStop()
-//    {
-////        super.onStop();
-//        if (mediaPlayer != null){
-//            if(mediaPlayer.isPlaying()){
-//                wasPlaying = true;
-//                mediaPlayer.pause();
-//            }
-//
-//        }
-//    }
 
     String spaces(String[] splited) {
         int length;
@@ -163,18 +190,15 @@ public class MainActivity extends Activity {
     public void recognize(View v) {
         if(mediaPlayer.isPlaying())
             wasPlaying = true;
-        mediaPlayer.pause();
+        pauseMusic();
         srh.run(this);
     }
 
     public void playPause(View v) {
-        ImageButton ib = (ImageButton)findViewById(R.id.btnPlayPause);
-        if(mediaPlayer.isPlaying() || wasPlaying){
-            ib.setImageResource(R.drawable.btn_play);
-            mediaPlayer.pause();
+        if(mediaPlayer.isPlaying()){
+            pauseMusic();
         } else {
-            ib.setImageResource(R.drawable.btn_pause);
-            mediaPlayer.start();
+            playMusic();
         }
     }
 
@@ -183,15 +207,16 @@ public class MainActivity extends Activity {
             Toast.makeText(this, "Music is already playing!", Toast.LENGTH_LONG).show();
         else
             Toast.makeText(this, "Play", Toast.LENGTH_LONG).show();
-        mediaPlayer.start(); //start again anyway, because we paused before recognition
+        playMusic(); //start again anyway, because we paused before recognition
     }
 
     public void recognizedPause(View v){    //no need to pause, already paused...
         if(!wasPlaying)
             Toast.makeText(this, "Music is already paused!", Toast.LENGTH_LONG).show();
         else
-            Toast.makeText(this, "Pause", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Paused", Toast.LENGTH_LONG).show();
         wasPlaying = false;
+        setButtonToPlay();
     }
 
     public void back(View v) {
@@ -203,19 +228,20 @@ public class MainActivity extends Activity {
         };
         if (mediaPlayer != null)
             mediaPlayer.release();
-        index=(index-2);
-        if(index<0)
-            index=index+numSongs;
+        index = (index + numSongs - 2) % numSongs;
         splited = songs[index].split("\\s+");
-        index=(index+1)%numSongs;
         String str = spaces(splited);
         mediaPlayer = MediaPlayer.create(this, Uri.parse("http://storage.googleapis.com/autoplay_audio/" + str));
         mediaPlayer.setOnCompletionListener(completionListener);
         if(!mediaPlayer.isPlaying())
-            mediaPlayer.start();
+            playMusic();
+        setSongDetailsText();
+        index=(index+1)%numSongs;
+        lastSongName=songs[index];
+
     }
 
-    // Activity Results handler
+    // Activity Results handler- This is used to take care of result of speech recognition
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         ArrayList matches = null;
@@ -227,17 +253,15 @@ public class MainActivity extends Activity {
             // there can be some strings because sometimes speech recognizing inaccurate
             // more relevant results in the beginning of the list
             matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-
-//            // in “matches” array we holding a results... let’s show the most relevant
-//            if (matches.size() > 0)
-//             TODO: remove, this is for tests only...   Toast.makeText(this, (String) matches.get(0), Toast.LENGTH_LONG).show();
         }
 
-        analyze(matches);
+        analyze((String)matches.get(0));
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    void analyze(ArrayList input) {
+    void analyze(String input) {
+        if(input == null)
+            return;
         View v = this.getWindow().getDecorView().findViewById(android.R.id.content);
         if (matchesPlay(input))
             recognizedPlay(v);
@@ -247,43 +271,67 @@ public class MainActivity extends Activity {
             forward(v);
         else if (matchesBack(input))
             back(v);
-
+        else if(matchesMakeSomeNoise(input))
+            raiseVolumeToMax();
+        else if(matchesVolumeUp(input))
+            raiseVolume();
+        else if(matchesVolumeDown(input))
+            decreaseVolume();
+        else
+            Toast.makeText(this,"Couldn't understand you...\nPlease try again!",Toast.LENGTH_SHORT).show();
         if(wasPlaying)
-            mediaPlayer.start();
+            playMusic();
         wasPlaying = false; //initialize back
 
     }
 
-    private boolean matchesPlay(ArrayList inputArray) {
-        for (Object word : inputArray) {
-            if (playMatches.contains(((String)word).toLowerCase()))
-                return true;
-        }
-        return false;
+    private void raiseVolumeToMax() {
+        AudioManager audioManager =
+                (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        int val =audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, val,AudioManager.FLAG_PLAY_SOUND);
     }
 
-    private boolean matchesPause(ArrayList inputArray) {
-        for (Object word : inputArray) {
-            if (pauseMatches.contains(((String)word).toLowerCase()))
-                return true;
-        }
-        return false;
+    private void raiseVolume() {
+        AudioManager audioManager =
+                (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
+                AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);
     }
 
-    private boolean matchesForward(ArrayList inputArray) {
-        for (Object word : inputArray) {
-            if (forwardMatches.contains(((String)word).toLowerCase()))
-                return true;
-        }
-        return false;
+    private void decreaseVolume() {
+        AudioManager audioManager =
+                (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
+                AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
     }
 
-    private boolean matchesBack(ArrayList inputArray) {
-        for (Object word : inputArray) {
-            if (backMatches.contains(((String)word).toLowerCase()))
-                return true;
-        }
-        return false;
+    private boolean matchesPlay(String input) {
+        return playMatches.contains(input.toLowerCase());
+    }
+
+    private boolean matchesPause(String input) {
+        return pauseMatches.contains(input.toLowerCase());
+    }
+
+    private boolean matchesForward(String input) {
+        return forwardMatches.contains(input.toLowerCase());
+    }
+
+    private boolean matchesBack(String input) {
+        return backMatches.contains(input.toLowerCase());
+    }
+
+    private boolean matchesMakeSomeNoise(String input) {
+        return makeSomeNoiseMatches.contains(input.toLowerCase());
+    }
+
+    private boolean matchesVolumeUp(String input) {
+        return volumeUpMatches.contains(input.toLowerCase());
+    }
+
+    private boolean matchesVolumeDown(String input) {
+        return volumeDownMatches.contains(input.toLowerCase());
     }
 
 
@@ -292,6 +340,9 @@ public class MainActivity extends Activity {
         backMatches = readPool("backMatches.txt");
         forwardMatches = readPool("forwardMatches.txt");
         pauseMatches = readPool("pauseMatches.txt");
+        makeSomeNoiseMatches = readPool("makeSomeNoiseMatches.txt");
+        volumeUpMatches = readPool("volumeUpMatches.txt");
+        volumeDownMatches = readPool("volumeDownMatches.txt");
     }
 
     private List<String> readPool(String poolFile) {
@@ -320,6 +371,31 @@ public class MainActivity extends Activity {
         return words;
     }
 
+    void setButtonToPlay(){
+        ImageButton ib = (ImageButton)findViewById(R.id.btnPlayPause);
+        ib.setImageResource(R.drawable.btn_play);
+
+    }
+
+    void setButtonToPause(){
+        ImageButton ib = (ImageButton)findViewById(R.id.btnPlayPause);
+        ib.setImageResource(R.drawable.btn_pause);
+    }
+
+
+    /*always call this fot play music, it does all the things around, like changing buttons etc.*/
+    void playMusic(){
+        setButtonToPause();
+        mediaPlayer.start();
+    }
+
+    /*always call this fot pause music, it does all the things around, like changing buttons etc.*/
+    void pauseMusic(){
+        setButtonToPlay();
+        if(mediaPlayer.isPlaying())
+            wasPlaying = true;
+        mediaPlayer.pause();
+    }
     class ServletPostAsyncTask extends AsyncTask<Pair<Context, String>, Void, String> {
         private Context context;
 
@@ -361,20 +437,29 @@ public class MainActivity extends Activity {
                 }
             };
             if (mediaPlayer == null) {
-                songs = result.split("@");
+                songs = result.split("#")[0].split("@");
+                singers=result.split("#")[1].split("@");
+                albums=result.split("#")[2].split("@");
                 numSongs=songs.length - 1;
                 splited = songs[index].split("\\s+");
-                index=(index+1)%numSongs;
+                if(numSongs!=0)
+                    index=(index+1)%(numSongs);
                 String str = spaces(splited);
+                lastSongName=songs[index];
                 Uri uri = Uri.parse("http://storage.googleapis.com/autoplay_audio/" + str);
                 mediaPlayer = MediaPlayer.create(context, uri);
 
                 if(mediaPlayer != null) {
                     mediaPlayer.setOnCompletionListener(completionListener);
-                    mediaPlayer.pause();
+                    pauseMusic();
                 }
             }
 
         }
     }
+
+
+
 }
+
+

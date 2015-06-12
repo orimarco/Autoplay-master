@@ -11,17 +11,36 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/player_footer_bg"
+        android:layout_above="@+id/artistName"
+        android:textStyle="bold"
         android:gravity="center"
         android:layout_centerInParent="true"
         android:id="@+id/songName"
         />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/albumName"
+        android:gravity="center"
+        android:layout_centerInParent="true"
+        android:id="@+id/artistName"
+        />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/player_footer_bg"
+        android:gravity="center"
+        android:layout_centerInParent="true"
+        android:id="@+id/albumName"
+        />
+
 
     <ImageButton
         android:layout_height="wrap_content"
         android:layout_width="wrap_content"
         android:adjustViewBounds="true"
         android:layout_centerInParent="true"
+        android:layout_above="@+id/songName"
         android:maxWidth="400dp"
         android:maxHeight="400dp"
         android:src = "@drawable/btn_mic"

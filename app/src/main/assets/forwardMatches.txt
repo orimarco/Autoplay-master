@@ -21,3 +21,8 @@ lip
 pip
 scared
 escape
+next
+ext
+nec
+nex
+act

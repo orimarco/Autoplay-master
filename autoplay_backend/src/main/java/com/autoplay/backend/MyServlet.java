@@ -73,10 +73,12 @@ public class MyServlet extends HttpServlet {
             lst.add(li.getName());
         }
         Collections.shuffle(lst);
-        String str = "";
+        String songsName = "";
+        String singerName="";
+        String albumsName="";
         int index=0;
         while(index<lst.size()&&playlistLength>0){
-            str += lst.get(index)+"@";
+            songsName += lst.get(index)+"@";
             URL url = new URL("http://storage.googleapis.com/autoplaycheck/info.txt");
             Scanner s = new Scanner(url.openStream());
             while(s.hasNextLine()){
@@ -85,12 +87,14 @@ public class MyServlet extends HttpServlet {
                 String string2=check[0].split(":")[1];
                 if(string2.compareTo(lst.get(index))==0){                     // if strings equal
                     playlistLength-=Integer.parseInt(check[2].split(":")[1]);
+                    singerName+=check[1].split(":")[1]+"@";
+                    albumsName+=check[3].split(":")[1]+"@";
                 }
             }
             index++;
         }
 
-        resp.getWriter().println(str);
+        resp.getWriter().println(songsName+"#"+singerName+"#"+albumsName);
     }
 
     /**
