@@ -3,3 +3,7 @@ app
 volume up
 louder
 older
+can't hear anything
+can't hear you
+can't hear
+turn me up

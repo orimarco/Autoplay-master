@@ -11,6 +11,7 @@ import android.widget.TextView;
 
 public class entranceActivity extends Activity {
 
+    private static final int minPlaylistLength = 15;
     private SeekBar seekBar;
     private TextView textView;
     int seekBarProgressInMinutes = 0;
@@ -75,6 +76,7 @@ public class entranceActivity extends Activity {
     }
 
     private void setMinutesInText(int minutes){
+        minutes += minPlaylistLength;
         textView.setText(minutes / 60 + "h" + minutes % 60 + "m");
     }
 

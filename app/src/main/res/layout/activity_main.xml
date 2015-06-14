@@ -77,7 +77,7 @@
             android:background="@null"/>
         <ImageButton
             android:id="@+id/btnPlayPause"
-            android:src="@drawable/btn_pause"
+            android:src="@drawable/btn_play"
             android:onClick="playPause"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

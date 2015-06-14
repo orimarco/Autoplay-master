@@ -22,8 +22,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
-        android:max="240"
-    ></SeekBar>
+        android:max="225"
+    />
 
     <TextView
         android:id="@+id/progressText"

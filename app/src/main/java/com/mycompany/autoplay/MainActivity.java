@@ -53,15 +53,18 @@ public class MainActivity extends Activity {
     String[] songs;
     String[] singers;
     String[] albums;
-    String[] splited;
     String android_id;
-    int ended=0;
-    String lastSongName="";             // name of song, if there are spaces need to be seperated by split("\\s+")
+    boolean ended = false;
+    String lastSongName="";             // name of song, if there are encodeSpaces need to be seperated by split("\\s+")
     boolean wasPlaying;
     int numSongs;
     int playlistLength=0;
 
     void callForward(){
+        if(mediaPlayer.isPlaying())
+            wasPlaying = true;
+        else
+            wasPlaying = false;
         MediaPlayer.OnCompletionListener completionListener= new MediaPlayer.OnCompletionListener(){
             @Override
             public void onCompletion(MediaPlayer arg0) {
@@ -70,18 +73,15 @@ public class MainActivity extends Activity {
         };
         if (mediaPlayer != null)
             mediaPlayer.release();
-        if(ended==1){
-            CompletedSongs+=lastSongName+"@";
+        if(ended){
+            CompletedSongs+= "\t" + lastSongName + "\n";
         }
-        ended=1;
-        splited = songs[index].split("\\s+");
-
+        ended = true;
         lastSongName=songs[index];
-        index=(index+1)%numSongs;
-        String str = spaces(splited);
-        mediaPlayer = MediaPlayer.create(this, Uri.parse("http://storage.googleapis.com/autoplay_audio/" + str));
+        index = (index + 1) % numSongs;
+        mediaPlayer = MediaPlayer.create(this, Uri.parse("http://storage.googleapis.com/autoplay_audio/" + getCurrentSongPath()));
         mediaPlayer.setOnCompletionListener(completionListener);
-        if(! mediaPlayer.isPlaying())
+        if(wasPlaying)
             playMusic();
         setSongDetailsText();
     }
@@ -99,8 +99,8 @@ public class MainActivity extends Activity {
     }
 
     public void forward(View v) {
-        ended =0;
-        UnCompletedSongs+=lastSongName+"@";
+        ended =false;
+        UnCompletedSongs += "\t" + lastSongName + "\n";
         callForward();
     }
     @Override
@@ -173,7 +173,7 @@ public class MainActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-    String spaces(String[] splited) {
+    protected String encodeSpaces(String[] splited) {
         int length;
         int i = 0;
         String str = "";
@@ -200,6 +200,7 @@ public class MainActivity extends Activity {
         } else {
             playMusic();
         }
+        setSongDetailsText();
     }
 
     public void recognizedPlay(View v){
@@ -220,6 +221,10 @@ public class MainActivity extends Activity {
     }
 
     public void back(View v) {
+        if(mediaPlayer.isPlaying())
+            wasPlaying = true;
+        else
+            wasPlaying = false;
         MediaPlayer.OnCompletionListener completionListener= new MediaPlayer.OnCompletionListener(){
             @Override
             public void onCompletion(MediaPlayer arg0) {
@@ -228,17 +233,20 @@ public class MainActivity extends Activity {
         };
         if (mediaPlayer != null)
             mediaPlayer.release();
-        index = (index + numSongs - 2) % numSongs;
-        splited = songs[index].split("\\s+");
-        String str = spaces(splited);
+        lastSongName=songs[index];
+        index = (index + numSongs - 1) % numSongs;  //cyclic decrease index
+        String str = getCurrentSongPath();
         mediaPlayer = MediaPlayer.create(this, Uri.parse("http://storage.googleapis.com/autoplay_audio/" + str));
         mediaPlayer.setOnCompletionListener(completionListener);
-        if(!mediaPlayer.isPlaying())
+        if(wasPlaying)
             playMusic();
         setSongDetailsText();
-        index=(index+1)%numSongs;
-        lastSongName=songs[index];
 
+    }
+
+    private String getCurrentSongPath() {
+        String[] splited = songs[index].split("\\s+");
+        return encodeSpaces(splited);
     }
 
     // Activity Results handler- This is used to take care of result of speech recognition
@@ -254,8 +262,8 @@ public class MainActivity extends Activity {
             // more relevant results in the beginning of the list
             matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
         }
-
-        analyze((String)matches.get(0));
+        if(matches != null)
+            analyze((String)matches.get(0));
         super.onActivityResult(requestCode, resultCode, data);
     }
 
@@ -295,15 +303,19 @@ public class MainActivity extends Activity {
     private void raiseVolume() {
         AudioManager audioManager =
                 (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-        audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
-                AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);
+        for(int i=0; i < 2; i++)
+            audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
+                    AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);
+
     }
 
     private void decreaseVolume() {
         AudioManager audioManager =
                 (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-        audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
-                AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
+        for(int i=0; i < 2; i++)
+            audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
+                    AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
+
     }
 
     private boolean matchesPlay(String input) {
@@ -438,28 +450,17 @@ public class MainActivity extends Activity {
             };
             if (mediaPlayer == null) {
                 songs = result.split("#")[0].split("@");
-                singers=result.split("#")[1].split("@");
-                albums=result.split("#")[2].split("@");
-                numSongs=songs.length - 1;
-                splited = songs[index].split("\\s+");
-                if(numSongs!=0)
-                    index=(index+1)%(numSongs);
-                String str = spaces(splited);
-                lastSongName=songs[index];
-                Uri uri = Uri.parse("http://storage.googleapis.com/autoplay_audio/" + str);
+                singers = result.split("#")[1].split("@");
+                albums = result.split("#")[2].split("@");
+                numSongs = songs.length - 1;
+                lastSongName = songs[index];
+                Uri uri = Uri.parse("http://storage.googleapis.com/autoplay_audio/" + getCurrentSongPath());
                 mediaPlayer = MediaPlayer.create(context, uri);
-
                 if(mediaPlayer != null) {
-                    mediaPlayer.setOnCompletionListener(completionListener);
-                    pauseMusic();
+//                    mediaPlayer.setOnCompletionListener(completionListener);
+//                    pauseMusic();
                 }
             }
-
         }
     }
-
-
-
 }
-
-

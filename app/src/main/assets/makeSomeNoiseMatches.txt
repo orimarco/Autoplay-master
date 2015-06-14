@@ -7,3 +7,5 @@ make noise
 goal frenzy
 can't hear you
 cant hear you
+wake me up
+AutoPlay wake me up
