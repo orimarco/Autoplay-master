@@ -21,13 +21,13 @@ import java.util.List;
 /**
  * Created by ori marcovitch on 6/12/15.
  */
-class ServletPostAsyncTask2 extends AsyncTask<Pair<Context, String>, Void, String> {
+class ServerLogSendRequest extends AsyncTask<Pair<Context, String>, Void, String> {
     private Context context;
     String CompletedSongs;
     String UnCompletedSongs;
     String android_id;
 
-    ServletPostAsyncTask2(String _CompletedSongs, String _UnCompletedSongs, String _android_id){
+    ServerLogSendRequest(String _CompletedSongs, String _UnCompletedSongs, String _android_id){
         CompletedSongs = _CompletedSongs;
         UnCompletedSongs = _UnCompletedSongs;
         android_id = _android_id;

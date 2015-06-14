@@ -48,6 +48,7 @@ public class MainActivity extends Activity {
     private List<String> makeSomeNoiseMatches;
     private List<String> volumeUpMatches;
     private List<String> volumeDownMatches;
+    private List<String> muteMatches;
     String CompletedSongs="";
     String UnCompletedSongs="";
     String[] songs;
@@ -56,15 +57,11 @@ public class MainActivity extends Activity {
     String android_id;
     boolean ended = false;
     String lastSongName="";             // name of song, if there are encodeSpaces need to be seperated by split("\\s+")
-    boolean wasPlaying;
+    boolean wasPlaying = false;
     int numSongs;
     int playlistLength=0;
 
     void callForward(){
-        if(mediaPlayer.isPlaying())
-            wasPlaying = true;
-        else
-            wasPlaying = false;
         MediaPlayer.OnCompletionListener completionListener= new MediaPlayer.OnCompletionListener(){
             @Override
             public void onCompletion(MediaPlayer arg0) {
@@ -111,25 +108,20 @@ public class MainActivity extends Activity {
             Bundle b = getIntent().getExtras();
             playlistLength = b.getInt("seekBarProgressInSeconds");
             index = 0;
-            wasPlaying = false;
             srh = new SpeechRecognitionHelper();    //initialize speech recogniאzer
             readPools();    //initialize word matching pools
 
-            new ServletPostAsyncTask().execute(new Pair<Context, String>(this, "1 2 3 4 5"));
+            new ServerPlaylistRequest().execute(new Pair<Context, String>(this, "1 2 3 4 5"));
             PhoneStateListener phoneStateListener = new PhoneStateListener() {
                 @Override
                 public void onCallStateChanged(int state, String incomingNumber) {
                     if (state == TelephonyManager.CALL_STATE_RINGING) {
-                        if(mediaPlayer.isPlaying())
-                            wasPlaying = true;
-                        pauseMusic();
+                        pauseMusicForSpeechRecognition();
                     } else if(state == TelephonyManager.CALL_STATE_IDLE) {
                         if(wasPlaying)
                             playMusic();
                     } else if(state == TelephonyManager.CALL_STATE_OFFHOOK) {
-                        if(mediaPlayer.isPlaying())
-                            wasPlaying = true;
-                        pauseMusic();
+                        pauseMusicForSpeechRecognition();
                     }
                     super.onCallStateChanged(state, incomingNumber);
                 }
@@ -146,7 +138,7 @@ public class MainActivity extends Activity {
     }
     protected void onStop() {
         super.onStop();
-        new ServletPostAsyncTask2(CompletedSongs, UnCompletedSongs, android_id).execute(new Pair<Context, String>(this, "1 2 3 4 5"));
+        new ServerLogSendRequest(CompletedSongs, UnCompletedSongs, android_id).execute(new Pair<Context, String>(this, "1 2 3 4 5"));
     }
 
 
@@ -188,9 +180,7 @@ public class MainActivity extends Activity {
     }
 
     public void recognize(View v) {
-        if(mediaPlayer.isPlaying())
-            wasPlaying = true;
-        pauseMusic();
+        pauseMusicForSpeechRecognition();
         srh.run(this);
     }
 
@@ -221,10 +211,6 @@ public class MainActivity extends Activity {
     }
 
     public void back(View v) {
-        if(mediaPlayer.isPlaying())
-            wasPlaying = true;
-        else
-            wasPlaying = false;
         MediaPlayer.OnCompletionListener completionListener= new MediaPlayer.OnCompletionListener(){
             @Override
             public void onCompletion(MediaPlayer arg0) {
@@ -264,10 +250,13 @@ public class MainActivity extends Activity {
         }
         if(matches != null)
             analyze((String)matches.get(0));
+        else    //if speech recognition was cancelled for some reason...
+            if(wasPlaying)
+                playMusic();
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    void analyze(String input) {
+    private void analyze(String input) {
         if(input == null)
             return;
         View v = this.getWindow().getDecorView().findViewById(android.R.id.content);
@@ -285,12 +274,16 @@ public class MainActivity extends Activity {
             raiseVolume();
         else if(matchesVolumeDown(input))
             decreaseVolume();
+        else if(matchesMute(input))
+            muteVolume();
+        else if(matchesSpecialVolumeUp(input))
+            updateSpecialVolumeUp(input);
+        else if(matchesSpecialVolumeDown(input))
+            updateSpecialVolumeDown(input);
         else
             Toast.makeText(this,"Couldn't understand you...\nPlease try again!",Toast.LENGTH_SHORT).show();
         if(wasPlaying)
             playMusic();
-        wasPlaying = false; //initialize back
-
     }
 
     private void raiseVolumeToMax() {
@@ -300,22 +293,48 @@ public class MainActivity extends Activity {
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, val,AudioManager.FLAG_PLAY_SOUND);
     }
 
+    private void muteVolume() {
+        AudioManager audioManager =
+                (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0,AudioManager.FLAG_PLAY_SOUND);
+    }
+
     private void raiseVolume() {
         AudioManager audioManager =
                 (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-        for(int i=0; i < 2; i++)
-            audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
-                    AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);
-
+        audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
+                AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);
     }
 
     private void decreaseVolume() {
         AudioManager audioManager =
                 (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-        for(int i=0; i < 2; i++)
-            audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
-                    AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
+        audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
+                AudioManager.ADJUST_LOWER * 2, AudioManager.FLAG_SHOW_UI);
+    }
 
+    private void updateSpecialVolumeUp(String input) {
+        String[] splited = input.toLowerCase().split(" ");
+        int count = 0;
+        for(String word : splited)
+            if(word.equals("up"))
+                count++;
+        AudioManager audioManager =
+                (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
+                AudioManager.ADJUST_RAISE * count, AudioManager.FLAG_SHOW_UI);
+    }
+
+    private void updateSpecialVolumeDown(String input) {
+        String[] splited = input.toLowerCase().split(" ");
+        int count = 0;
+        for(String word : splited)
+            if(word.equals("down"))
+                count++;
+        AudioManager audioManager =
+                (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
+                AudioManager.ADJUST_LOWER * count, AudioManager.FLAG_SHOW_UI);
     }
 
     private boolean matchesPlay(String input) {
@@ -346,6 +365,22 @@ public class MainActivity extends Activity {
         return volumeDownMatches.contains(input.toLowerCase());
     }
 
+    private boolean matchesMute(String input) {
+        return muteMatches.contains(input.toLowerCase());
+    }
+    private boolean matchesSpecialVolumeUp(String input) {
+        String[] splited = input.toLowerCase().split(" ");
+        if(splited != null && splited.length >= 3)
+            return splited[0].equals("volume") && splited[1].equals("up") && splited[2].equals("up");
+        return false;
+    }
+
+    private boolean matchesSpecialVolumeDown(String input) {
+        String[] splited = input.toLowerCase().split(" ");
+        if(splited != null && splited.length >= 3)
+            return splited[0].equals("volume") && splited[1].equals("down") && splited[2].equals("down");
+        return false;
+    }
 
     private void readPools() {
         playMatches = readPool("playMatches.txt");
@@ -355,6 +390,7 @@ public class MainActivity extends Activity {
         makeSomeNoiseMatches = readPool("makeSomeNoiseMatches.txt");
         volumeUpMatches = readPool("volumeUpMatches.txt");
         volumeDownMatches = readPool("volumeDownMatches.txt");
+        muteMatches = readPool("muteMatches.txt");
     }
 
     private List<String> readPool(String poolFile) {
@@ -383,32 +419,40 @@ public class MainActivity extends Activity {
         return words;
     }
 
-    void setButtonToPlay(){
+    private void setButtonToPlay(){
         ImageButton ib = (ImageButton)findViewById(R.id.btnPlayPause);
         ib.setImageResource(R.drawable.btn_play);
 
     }
 
-    void setButtonToPause(){
+    private void setButtonToPause(){
         ImageButton ib = (ImageButton)findViewById(R.id.btnPlayPause);
         ib.setImageResource(R.drawable.btn_pause);
     }
 
 
     /*always call this fot play music, it does all the things around, like changing buttons etc.*/
-    void playMusic(){
+    private void playMusic(){
         setButtonToPause();
         mediaPlayer.start();
+        wasPlaying = true;
     }
 
     /*always call this fot pause music, it does all the things around, like changing buttons etc.*/
     void pauseMusic(){
         setButtonToPlay();
+        wasPlaying = false;
+        mediaPlayer.pause();
+    }
+
+    void pauseMusicForSpeechRecognition(){
+        setButtonToPlay();
         if(mediaPlayer.isPlaying())
             wasPlaying = true;
         mediaPlayer.pause();
     }
-    class ServletPostAsyncTask extends AsyncTask<Pair<Context, String>, Void, String> {
+    class ServerPlaylistRequest extends AsyncTask<Pair<Context, String>, Void, String> {
+        public static final String playlistReqUrl = "http://perudo-909.appspot.com/hello";
         private Context context;
 
         @Override
@@ -417,7 +461,7 @@ public class MainActivity extends Activity {
             String name = params[0].second;
 
             HttpClient httpClient = new DefaultHttpClient();
-            HttpPost httpPost = new HttpPost("http://perudo-909.appspot.com/hello");
+            HttpPost httpPost = new HttpPost(playlistReqUrl);
             try {
                 // Add name data to request
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);

@@ -14,7 +14,7 @@ public class entranceActivity extends Activity {
     private static final int minPlaylistLength = 15;
     private SeekBar seekBar;
     private TextView textView;
-    int seekBarProgressInMinutes = 0;
+    int seekBarProgressInMinutes = minPlaylistLength;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,7 +30,7 @@ public class entranceActivity extends Activity {
 
             @Override
             public void onProgressChanged(SeekBar seekBar, int progresValue, boolean fromUser) {
-                seekBarProgressInMinutes = progresValue;
+                seekBarProgressInMinutes = progresValue + minPlaylistLength;
                 setMinutesInText(seekBarProgressInMinutes);
             }
 
@@ -76,7 +76,6 @@ public class entranceActivity extends Activity {
     }
 
     private void setMinutesInText(int minutes){
-        minutes += minPlaylistLength;
         textView.setText(minutes / 60 + "h" + minutes % 60 + "m");
     }
 
