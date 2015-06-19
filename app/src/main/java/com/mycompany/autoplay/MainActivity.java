@@ -321,8 +321,9 @@ public class MainActivity extends Activity {
                 count++;
         AudioManager audioManager =
                 (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-        audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
-                AudioManager.ADJUST_RAISE * count, AudioManager.FLAG_SHOW_UI);
+        for(int i = 0 ; i < count; ++i)
+            audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
+                AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);
     }
 
     private void updateSpecialVolumeDown(String input) {
@@ -333,8 +334,9 @@ public class MainActivity extends Activity {
                 count++;
         AudioManager audioManager =
                 (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-        audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
-                AudioManager.ADJUST_LOWER * count, AudioManager.FLAG_SHOW_UI);
+        for(int i = 0 ; i < count; ++i)
+            audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
+                 AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
     }
 
     private boolean matchesPlay(String input) {
