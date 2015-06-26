@@ -4,17 +4,19 @@
         <servlet-name>MyServlet</servlet-name>
         <servlet-class>com.autoplay.backend.MyServlet</servlet-class>
     </servlet>
+
     <servlet>
-        <servlet-name>anotherServlet</servlet-name>
-        <servlet-class>com.autoplay.backend.anotherServlet</servlet-class>
+        <servlet-name>PostServer</servlet-name>
+        <servlet-class>com.autoplay.backend.PostServer</servlet-class>
     </servlet>
+
+    <servlet-mapping>
+        <servlet-name>PostServer</servlet-name>
+        <url-pattern>/david</url-pattern>
+    </servlet-mapping>
     <servlet-mapping>
         <servlet-name>MyServlet</servlet-name>
         <url-pattern>/hello</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>anotherServlet</servlet-name>
-        <url-pattern>/bello</url-pattern>
     </servlet-mapping>
     <welcome-file-list>
         <welcome-file>index.html</welcome-file>

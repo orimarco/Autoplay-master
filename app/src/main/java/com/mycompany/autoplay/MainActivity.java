@@ -71,11 +71,11 @@ public class MainActivity extends Activity {
         if (mediaPlayer != null)
             mediaPlayer.release();
         if(ended){
-            CompletedSongs+= "\t" + lastSongName + "\n";
+            CompletedSongs+= "\n\t\t" + lastSongName ;
         }
         ended = true;
-        lastSongName=songs[index];
         index = (index + 1) % numSongs;
+        lastSongName=songs[index];
         mediaPlayer = MediaPlayer.create(this, Uri.parse("http://storage.googleapis.com/autoplay_audio/" + getCurrentSongPath()));
         mediaPlayer.setOnCompletionListener(completionListener);
         if(wasPlaying)
@@ -97,7 +97,7 @@ public class MainActivity extends Activity {
 
     public void forward(View v) {
         ended =false;
-        UnCompletedSongs += "\t" + lastSongName + "\n";
+        UnCompletedSongs += "\n\t\t" + lastSongName;
         callForward();
     }
     @Override
@@ -138,7 +138,11 @@ public class MainActivity extends Activity {
     }
     protected void onStop() {
         super.onStop();
-        new ServerLogSendRequest(CompletedSongs, UnCompletedSongs, android_id).execute(new Pair<Context, String>(this, "1 2 3 4 5"));
+        if(CompletedSongs != "" || UnCompletedSongs != ""){
+            new ServerLogSendRequest(CompletedSongs, UnCompletedSongs, android_id).execute(new Pair<Context, String>(this, "1 2 3 4 5"));
+            CompletedSongs = "";
+            UnCompletedSongs = "";
+        }
     }
 
 
@@ -217,10 +221,11 @@ public class MainActivity extends Activity {
                 callForward();
             }
         };
+        UnCompletedSongs += "\n\t\t" + lastSongName;
         if (mediaPlayer != null)
             mediaPlayer.release();
-        lastSongName=songs[index];
         index = (index + numSongs - 1) % numSongs;  //cyclic decrease index
+        lastSongName=songs[index];
         String str = getCurrentSongPath();
         mediaPlayer = MediaPlayer.create(this, Uri.parse("http://storage.googleapis.com/autoplay_audio/" + str));
         mediaPlayer.setOnCompletionListener(completionListener);

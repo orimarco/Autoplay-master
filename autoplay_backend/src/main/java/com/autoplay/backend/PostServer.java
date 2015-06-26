@@ -77,7 +77,7 @@ public class PostServer extends HttpServlet {
         String v = new String(previous.array());
         Charset charset = Charset.forName("UTF-8");
         CharsetEncoder encoder = charset.newEncoder();
-        ByteBuffer updated =encoder.encode(CharBuffer.wrap(v+"android id:"+android_id+"   Uncompleted Songs:"+UnCompletedSongs+"   Completed Songs:"+CompletedSongs+"#"));
+        ByteBuffer updated =encoder.encode(CharBuffer.wrap(v+"\nandroid id:"+android_id+"\n\tUncompleted Songs:"+UnCompletedSongs+"\n\tCompleted Songs:"+CompletedSongs+"#"));
         GcsFileOptions.Builder gcsfileoptions=new GcsFileOptions.Builder();
         GcsFileOptions gcsfileoptions1=gcsfileoptions.build();
         gcsService.createOrReplace(gcsFilename,  gcsfileoptions1,  updated);
