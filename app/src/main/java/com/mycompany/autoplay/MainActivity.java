@@ -61,13 +61,15 @@ public class MainActivity extends Activity {
     int numSongs;
     int playlistLength=0;
 
+    MediaPlayer.OnCompletionListener completionListener= new MediaPlayer.OnCompletionListener(){
+        @Override
+        public void onCompletion(MediaPlayer arg0) {
+            callForward();
+        }
+    };
+
     void callForward(){
-        MediaPlayer.OnCompletionListener completionListener= new MediaPlayer.OnCompletionListener(){
-            @Override
-            public void onCompletion(MediaPlayer arg0) {
-                callForward();
-            }
-        };
+
         if (mediaPlayer != null)
             mediaPlayer.release();
         if(ended){
@@ -136,6 +138,7 @@ public class MainActivity extends Activity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
     }
+
     protected void onStop() {
         super.onStop();
         if(CompletedSongs != "" || UnCompletedSongs != ""){
@@ -146,6 +149,12 @@ public class MainActivity extends Activity {
     }
 
 
+    @Override
+    public void onBackPressed(){
+        Intent intent = new Intent(this, entranceActivity.class);
+        startActivity(intent);
+        finish();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -194,7 +203,6 @@ public class MainActivity extends Activity {
         } else {
             playMusic();
         }
-        setSongDetailsText();
     }
 
     public void recognizedPlay(View v){
@@ -215,12 +223,6 @@ public class MainActivity extends Activity {
     }
 
     public void back(View v) {
-        MediaPlayer.OnCompletionListener completionListener= new MediaPlayer.OnCompletionListener(){
-            @Override
-            public void onCompletion(MediaPlayer arg0) {
-                callForward();
-            }
-        };
         UnCompletedSongs += "\n\t\t" + lastSongName;
         if (mediaPlayer != null)
             mediaPlayer.release();
@@ -296,12 +298,15 @@ public class MainActivity extends Activity {
                 (AudioManager)getSystemService(Context.AUDIO_SERVICE);
         int val =audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, val,AudioManager.FLAG_PLAY_SOUND);
+        Toast.makeText(this, "Volume set to maximum", Toast.LENGTH_LONG).show();
     }
 
     private void muteVolume() {
         AudioManager audioManager =
                 (AudioManager)getSystemService(Context.AUDIO_SERVICE);
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0,AudioManager.FLAG_PLAY_SOUND);
+        Toast.makeText(this, "Music muted", Toast.LENGTH_LONG).show();
+
     }
 
     private void raiseVolume() {
@@ -440,6 +445,7 @@ public class MainActivity extends Activity {
 
     /*always call this fot play music, it does all the things around, like changing buttons etc.*/
     private void playMusic(){
+        setSongDetailsText();
         setButtonToPause();
         mediaPlayer.start();
         wasPlaying = true;
@@ -447,6 +453,7 @@ public class MainActivity extends Activity {
 
     /*always call this fot pause music, it does all the things around, like changing buttons etc.*/
     void pauseMusic(){
+        setSongDetailsText();
         setButtonToPlay();
         wasPlaying = false;
         mediaPlayer.pause();
@@ -454,9 +461,10 @@ public class MainActivity extends Activity {
 
     void pauseMusicForSpeechRecognition(){
         setButtonToPlay();
-        if(mediaPlayer.isPlaying())
+        if(mediaPlayer.isPlaying()){
             wasPlaying = true;
-        mediaPlayer.pause();
+            mediaPlayer.pause();
+        }
     }
     class ServerPlaylistRequest extends AsyncTask<Pair<Context, String>, Void, String> {
         public static final String playlistReqUrl = "http://perudo-909.appspot.com/hello";
@@ -491,14 +499,9 @@ public class MainActivity extends Activity {
 
         }
 
+
         @Override
         protected void onPostExecute(String result) {
-            MediaPlayer.OnCompletionListener completionListener = new MediaPlayer.OnCompletionListener(){
-                @Override
-                public void onCompletion(MediaPlayer arg0) {
-                    callForward();
-                }
-            };
             if (mediaPlayer == null) {
                 songs = result.split("#")[0].split("@");
                 singers = result.split("#")[1].split("@");
@@ -507,10 +510,8 @@ public class MainActivity extends Activity {
                 lastSongName = songs[index];
                 Uri uri = Uri.parse("http://storage.googleapis.com/autoplay_audio/" + getCurrentSongPath());
                 mediaPlayer = MediaPlayer.create(context, uri);
-                if(mediaPlayer != null) {
-//                    mediaPlayer.setOnCompletionListener(completionListener);
-//                    pauseMusic();
-                }
+                mediaPlayer.setOnCompletionListener(completionListener);
+                setSongDetailsText();
             }
         }
     }
