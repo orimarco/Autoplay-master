@@ -14,8 +14,6 @@ import com.google.appengine.tools.cloudstorage.ListResult;
 import com.google.appengine.tools.cloudstorage.RetryParams;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,6 +31,8 @@ import javax.servlet.http.HttpServletResponse;
 @SuppressWarnings("serial")
 public class GetPlaylistServlet extends HttpServlet {
 
+    public static final String INFO_FILE_URL = "http://storage.googleapis.com/<bucket>/<file>";
+    public static final String AUDIO_BUCKET = "<bucket>";
     /**
      * This is where backoff parameters are configured. Here it is aggressively retrying with
      * backoff, up to 10 times but taking no more that 15 seconds total to do so.
@@ -63,7 +63,7 @@ public class GetPlaylistServlet extends HttpServlet {
         int found=0;
         String playlistLengthS=req.getParameter("playlistLength");
         int playlistLength=Integer.parseInt(playlistLengthS);
-        ListResult lr = gcsService.list("autoplay_audio", ListOptions.DEFAULT);
+        ListResult lr = gcsService.list(AUDIO_BUCKET, ListOptions.DEFAULT);
         List<String>lst=new ArrayList<>();
         while(lr.hasNext()){
             ListItem li = lr.next();
@@ -76,7 +76,7 @@ public class GetPlaylistServlet extends HttpServlet {
         int index=0;
         while(index<lst.size()&&playlistLength>0){
             songsName += lst.get(index)+"@";
-            URL url = new URL("http://storage.googleapis.com/autoplaycheck/info.txt");
+            URL url = new URL(INFO_FILE_URL);
             Scanner s = new Scanner(url.openStream());
             while(s.hasNextLine()){
                 String string=s.nextLine();
