@@ -22,6 +22,7 @@ import java.util.List;
  * Created by ori marcovitch on 6/12/15.
  */
 class ServerLogSendRequest extends AsyncTask<Pair<Context, String>, Void, String> {
+    public static final String SEND_LOG_URL = "http://<project>.appspot.com/<servlet>";
     private Context context;
     String CompletedSongs;
     String UnCompletedSongs;
@@ -36,10 +37,9 @@ class ServerLogSendRequest extends AsyncTask<Pair<Context, String>, Void, String
     protected String doInBackground(Pair<Context, String>... params) {
 
         context = params[0].first;
-        String name = params[0].second;
 
         HttpClient httpClient = new DefaultHttpClient();
-        HttpPost httpPost = new HttpPost("http://perudo-909.appspot.com/david");
+        HttpPost httpPost = new HttpPost(SEND_LOG_URL);
         try {
             // Add name data to request
             List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);

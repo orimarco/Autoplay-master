@@ -9,11 +9,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
-import android.telephony.PhoneStateListener;
-import android.telephony.TelephonyManager;
 import android.util.Pair;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -38,6 +34,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends Activity {
+    public static final String GET_PLAYLIST_SERVLET_URL = "http://<project>.appspot.com/<servlet>";
+    public static final String MUSIC_STORAGE_BUCKET_URL = "http://storage.googleapis.com/<bucket>/";
     MediaPlayer mediaPlayer;
     SpeechRecognitionHelper srh;
     int index;
@@ -78,13 +76,17 @@ public class MainActivity extends Activity {
         ended = true;
         index = (index + 1) % numSongs;
         lastSongName=songs[index];
-        mediaPlayer = MediaPlayer.create(this, Uri.parse("http://storage.googleapis.com/autoplay_audio/" + getCurrentSongPath()));
+        mediaPlayer = MediaPlayer.create(this, Uri.parse(MUSIC_STORAGE_BUCKET_URL + getCurrentSongPath()));
         mediaPlayer.setOnCompletionListener(completionListener);
         if(wasPlaying)
             playMusic();
         setSongDetailsText();
     }
 
+    /*
+    * Displays song details on screen
+    * Details that will be displayed are: Song name, Artist and Album.
+    * */
     private void setSongDetailsText() {
         String songNameSpaces=songs[index];
         String songSingerSpaces=singers[index];
@@ -97,11 +99,15 @@ public class MainActivity extends Activity {
         albumName.setText(songAlbumSpaces);
     }
 
+    /*
+    * Will be called when Forward button will be pressed
+    * */
     public void forward(View v) {
         ended =false;
         UnCompletedSongs += "\n\t\t" + lastSongName;
         callForward();
     }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         android_id = android.provider.Settings.Secure.getString(this.getContentResolver(), android.provider.Settings.Secure.ANDROID_ID); //
@@ -113,25 +119,7 @@ public class MainActivity extends Activity {
             srh = new SpeechRecognitionHelper();    //initialize speech recogniאzer
             readPools();    //initialize word matching pools
 
-            new ServerPlaylistRequest().execute(new Pair<Context, String>(this, "1 2 3 4 5"));
-            PhoneStateListener phoneStateListener = new PhoneStateListener() {
-                @Override
-                public void onCallStateChanged(int state, String incomingNumber) {
-                    if (state == TelephonyManager.CALL_STATE_RINGING) {
-                        pauseMusicForSpeechRecognition();
-                    } else if(state == TelephonyManager.CALL_STATE_IDLE) {
-                        if(wasPlaying)
-                            playMusic();
-                    } else if(state == TelephonyManager.CALL_STATE_OFFHOOK) {
-                        pauseMusicForSpeechRecognition();
-                    }
-                    super.onCallStateChanged(state, incomingNumber);
-                }
-            };
-            TelephonyManager mgr = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
-//            TODO: if(mgr != null) {
-//                mgr.listen(phoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
-//            }
+            new ServerPlaylistRequest().execute(new Pair<Context, String>(this, "1 2 3 4 5")); //request playlist from server
         }
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
@@ -139,6 +127,9 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
     }
 
+    /*
+    * When App is closed or just not in main screen it's a good time to log information to the server!
+    * */
     protected void onStop() {
         super.onStop();
         if(CompletedSongs != "" || UnCompletedSongs != ""){
@@ -148,7 +139,10 @@ public class MainActivity extends Activity {
         }
     }
 
-
+    /*
+    * Will be called when Back button is pressed (the one of android, not of the media buttons of
+    * the app).
+    * */
     @Override
     public void onBackPressed(){
         Intent intent = new Intent(this, entranceActivity.class);
@@ -156,28 +150,9 @@ public class MainActivity extends Activity {
         finish();
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
+    /*
+    * encodes spaces into %20 for URL...
+    * */
     protected String encodeSpaces(String[] splited) {
         int length;
         int i = 0;
@@ -192,11 +167,18 @@ public class MainActivity extends Activity {
         return str;
     }
 
+    /*
+    * Will be called when Recognize button is pressed
+    * */
     public void recognize(View v) {
         pauseMusicForSpeechRecognition();
         srh.run(this);
     }
 
+
+    /*
+    * Will be called when play\pause button will be pressed
+    * */
     public void playPause(View v) {
         if(mediaPlayer.isPlaying()){
             pauseMusic();
@@ -205,22 +187,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    public void recognizedPlay(View v){
-        if(wasPlaying)
-            Toast.makeText(this, "Music is already playing!", Toast.LENGTH_LONG).show();
-        else
-            Toast.makeText(this, "Play", Toast.LENGTH_LONG).show();
-        playMusic(); //start again anyway, because we paused before recognition
-    }
 
-    public void recognizedPause(View v){    //no need to pause, already paused...
-        if(!wasPlaying)
-            Toast.makeText(this, "Music is already paused!", Toast.LENGTH_LONG).show();
-        else
-            Toast.makeText(this, "Paused", Toast.LENGTH_LONG).show();
-        wasPlaying = false;
-        setButtonToPlay();
-    }
 
     public void back(View v) {
         UnCompletedSongs += "\n\t\t" + lastSongName;
@@ -229,7 +196,7 @@ public class MainActivity extends Activity {
         index = (index + numSongs - 1) % numSongs;  //cyclic decrease index
         lastSongName=songs[index];
         String str = getCurrentSongPath();
-        mediaPlayer = MediaPlayer.create(this, Uri.parse("http://storage.googleapis.com/autoplay_audio/" + str));
+        mediaPlayer = MediaPlayer.create(this, Uri.parse(MUSIC_STORAGE_BUCKET_URL + str));
         mediaPlayer.setOnCompletionListener(completionListener);
         if(wasPlaying)
             playMusic();
@@ -263,6 +230,11 @@ public class MainActivity extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
     }
 
+
+    /*
+    * Checks what is the command that the user wants and calls the matching method to take
+    * care of it.
+    * */
     private void analyze(String input) {
         if(input == null)
             return;
@@ -293,10 +265,33 @@ public class MainActivity extends Activity {
             playMusic();
     }
 
+
+    /*
+    *   The following methods will be called when some word is recognized from user.
+    *
+    *  */
+
+    public void recognizedPlay(View v){
+        if(wasPlaying)
+            Toast.makeText(this, "Music is already playing!", Toast.LENGTH_LONG).show();
+        else
+            Toast.makeText(this, "Play", Toast.LENGTH_LONG).show();
+        playMusic(); //start again anyway, because we paused before recognition
+    }
+
+    public void recognizedPause(View v){    //no need to pause, already paused...
+        if(!wasPlaying)
+            Toast.makeText(this, "Music is already paused!", Toast.LENGTH_LONG).show();
+        else
+            Toast.makeText(this, "Paused", Toast.LENGTH_LONG).show();
+        wasPlaying = false;
+        setButtonToPlay();
+    }
+
     private void raiseVolumeToMax() {
         AudioManager audioManager =
                 (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-        int val =audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        int val = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, val,AudioManager.FLAG_PLAY_SOUND);
         Toast.makeText(this, "Volume set to maximum", Toast.LENGTH_LONG).show();
     }
@@ -349,6 +344,12 @@ public class MainActivity extends Activity {
                  AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
     }
 
+    /*
+    *   The following methods will be called when trying to match user's input to a command.
+    *   The matching is done by searching user's input to pools of words that match to each command.
+    *
+    *  */
+
     private boolean matchesPlay(String input) {
         return playMatches.contains(input.toLowerCase());
     }
@@ -380,6 +381,7 @@ public class MainActivity extends Activity {
     private boolean matchesMute(String input) {
         return muteMatches.contains(input.toLowerCase());
     }
+
     private boolean matchesSpecialVolumeUp(String input) {
         String[] splited = input.toLowerCase().split(" ");
         if(splited != null && splited.length >= 3)
@@ -394,6 +396,9 @@ public class MainActivity extends Activity {
         return false;
     }
 
+    /*
+    * Reads the pools for every voice actication supported command.l
+    * */
     private void readPools() {
         playMatches = readPool("playMatches.txt");
         backMatches = readPool("backMatches.txt");
@@ -466,14 +471,18 @@ public class MainActivity extends Activity {
             mediaPlayer.pause();
         }
     }
+
+
+    /*
+    * Request for playlist from the server using the URL that is contained in- GET_PLAYLIST_SERVLET_URL
+    * */
     class ServerPlaylistRequest extends AsyncTask<Pair<Context, String>, Void, String> {
-        public static final String playlistReqUrl = "http://perudo-909.appspot.com/hello";
+        public static final String playlistReqUrl = GET_PLAYLIST_SERVLET_URL;
         private Context context;
 
         @Override
         protected String doInBackground(Pair<Context, String>... params) {
             context = params[0].first;
-            String name = params[0].second;
 
             HttpClient httpClient = new DefaultHttpClient();
             HttpPost httpPost = new HttpPost(playlistReqUrl);
@@ -508,7 +517,7 @@ public class MainActivity extends Activity {
                 albums = result.split("#")[2].split("@");
                 numSongs = songs.length - 1;
                 lastSongName = songs[index];
-                Uri uri = Uri.parse("http://storage.googleapis.com/autoplay_audio/" + getCurrentSongPath());
+                Uri uri = Uri.parse(MUSIC_STORAGE_BUCKET_URL + getCurrentSongPath());
                 mediaPlayer = MediaPlayer.create(context, uri);
                 mediaPlayer.setOnCompletionListener(completionListener);
                 setSongDetailsText();

@@ -31,8 +31,7 @@ import javax.servlet.http.HttpServletResponse;
  * A simple servlet that proxies reads and writes to its Google Cloud Storage bucket.
  */
 @SuppressWarnings("serial")
-public class MyServlet extends HttpServlet {
-    public static final boolean SERVE_USING_BLOBSTORE_API = false;
+public class GetPlaylistServlet extends HttpServlet {
 
     /**
      * This is where backoff parameters are configured. Here it is aggressively retrying with
@@ -44,8 +43,6 @@ public class MyServlet extends HttpServlet {
             .totalRetryPeriodMillis(15000)
             .build());
 
-    /**Used below to determine the size of chucks to read in. Should be > 1kb and < 10MB */
-    private static final int BUFFER_SIZE = 2 * 1024 * 1024;
 
     /**
      * Retrieves a file from GCS and returns it in the http response.
@@ -97,20 +94,4 @@ public class MyServlet extends HttpServlet {
         resp.getWriter().println(songsName+"#"+singerName+"#"+albumsName);
     }
 
-    /**
-     * Transfer the data from the inputStream to the outputStream. Then close both streams.
-     */
-    private void copy(InputStream input, OutputStream output) throws IOException {
-        try {
-            byte[] buffer = new byte[BUFFER_SIZE];
-            int bytesRead = input.read(buffer);
-            while (bytesRead != -1) {
-                output.write(buffer, 0, bytesRead);
-                bytesRead = input.read(buffer);
-            }
-        } finally {
-            input.close();
-            output.close();
-        }
-    }
 }

@@ -2,7 +2,7 @@
 <web-app xmlns="http://java.sun.com/xml/ns/javaee" version="2.5">
     <servlet>
         <servlet-name>MyServlet</servlet-name>
-        <servlet-class>com.autoplay.backend.MyServlet</servlet-class>
+        <servlet-class>com.autoplay.backend.GetPlaylistServlet</servlet-class>
     </servlet>
 
     <servlet>

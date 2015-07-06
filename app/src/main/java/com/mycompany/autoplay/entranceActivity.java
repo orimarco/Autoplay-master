@@ -9,6 +9,13 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 
+/*
+* Purpose of this Activity is just to interactively get from the user
+* the length of Playlist he would like to hear.
+* Nothing clever here...
+* */
+
+
 public class entranceActivity extends Activity {
 
     private static final int minPlaylistLength = 15;
